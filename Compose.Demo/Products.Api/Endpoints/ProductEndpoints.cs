@@ -67,6 +67,7 @@ public static class ProductEndpoints
             int id,
             UpdateProductRequest request,
             ApplicationDbContext context,
+            IDistributedCache cache,
             CancellationToken ct) =>
         {
             var product = await context.Products
@@ -82,12 +83,15 @@ public static class ProductEndpoints
 
             await context.SaveChangesAsync(ct);
 
+            await cache.RemoveAsync($"products-{id}");
+
             return Results.NoContent();
         });
 
         app.MapDelete("products/{id}", async (
             int id,
             ApplicationDbContext context,
+            IDistributedCache cache,
             CancellationToken ct) =>
         {
             var product = await context.Products
@@ -101,6 +105,8 @@ public static class ProductEndpoints
             context.Remove(product);
 
             await context.SaveChangesAsync(ct);
+
+            await cache.RemoveAsync($"products-{id}");
 
             return Results.NoContent();
         });
