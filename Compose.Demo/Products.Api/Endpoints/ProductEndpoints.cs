@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Distributed;
 using Products.Api.Contracts;
 using Products.Api.Database;
 using Products.Api.Entities;
@@ -45,11 +46,19 @@ public static class ProductEndpoints
         app.MapGet("products/{id}", async (
             int id,
             ApplicationDbContext context,
+            IDistributedCache cache,
             CancellationToken ct) =>
         {
-            var product = await context.Products
-                .AsNoTracking()
-                .FirstOrDefaultAsync(p => p.Id == id, ct);
+            var product = await cache.GetAsync($"products-{id}",
+                async token =>
+                {
+                    var product = await context.Products
+                        .AsNoTracking()
+                        .FirstOrDefaultAsync(p => p.Id == id, token);
+
+                    return product;
+                },
+                CacheOptions.DefaultExpiration, ct);
 
             return product is null ? Results.NotFound() : Results.Ok(product);
         });
