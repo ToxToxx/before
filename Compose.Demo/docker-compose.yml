@@ -22,4 +22,9 @@ services:
         - ./.containers/products-db:/var/lib/postgresql/data
     ports:
         - "5432:5432"
+  products.cache:
+    image: redis:latest
+    container_name: redisCacheContainer
+    ports:
+        - "6379:6379"
   
